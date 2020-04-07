@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PlexFrameworkVersion</key>
+    <string>2</string>
+    <key>CFBundleIdentifier</key>
+    <string>io.github.lacmac.tvmaze</string>
+    <key>PlexAgentAttributionText</key>
+    <string>TVmaze.com</string>
+    <key>PlexPluginClass</key>
+    <string>Agent</string>
+    <key>PlexPluginCodePolicy</key>
+    <string>Elevated</string>
+</dict>

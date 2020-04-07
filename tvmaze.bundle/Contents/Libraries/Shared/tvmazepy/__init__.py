@@ -1,0 +1,1 @@
+from tvmazepy.tvmaze import *
