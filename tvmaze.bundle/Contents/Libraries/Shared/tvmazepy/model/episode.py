@@ -1,7 +1,9 @@
+from __future__ import absolute_import, unicode_literals
+
 from .. import utils
 
 
-class Episode:
+class Episode(object):
     def __init__(self, data):
         self.id = data['id']
         self.url = data['url']
@@ -18,4 +20,5 @@ class Episode:
         self.special = self.number == 0
 
     def __str__(self):
-        return f'S{self.season}E{self.number} {self.name}' if not self.special else f'Special: {self.name}'
+        return 'S{}E{} {}'.format(self.season, self.number, self.name)
+        # return f'S{self.season}E{self.number} {self.name}' if not self.special else f'Special: {self.name}'

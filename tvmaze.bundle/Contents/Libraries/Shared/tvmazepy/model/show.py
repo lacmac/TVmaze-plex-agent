@@ -1,10 +1,12 @@
+from __future__ import absolute_import, unicode_literals
+
 from .. import utils
 from .season import Season
 from .episode import Episode
 from .person import Crew, Character
 
 
-class Show:
+class Show(object):
     def __init__(self, data):
         self.score = data['score'] if 'score' in data else 100
         show = data['show'] if 'show' in data else data
@@ -35,6 +37,7 @@ class Show:
         self.links = show['_links']
 
     def _handle_embedded(self, embedded):
+        special_num = 1
         if 'seasons' in embedded:
             seasons = [Season(season) for season in embedded['seasons']]
             for season in seasons:
@@ -46,6 +49,9 @@ class Show:
                 if not episode.special:
                     self.seasons[episode.season].episodes[episode.number] = episode
                 else:
+                    episode.season = 0
+                    episode.number = special_num
+                    special_num += 1
                     self.specials[episode.id] = episode
 
         if 'seasons' not in embedded and 'episodes' in embedded:
@@ -54,13 +60,16 @@ class Show:
                 if not episode.special:
                     self._episode_list.append(episode)
                 else:
+                    episode.season = 0
+                    episode.number = special_num
+                    special_num += 1
                     self.specials[episode.id] = episode
 
         self.cast = [Character(c['character'], c['person']) for c in embedded['cast']] if 'cast' in embedded else []
         self.crew = [Crew(c) for c in embedded['crew']] if 'crew' in embedded else []
 
     def __str__(self):
-        return f'{self.id}: {self.name}'
+        return str(self.id) + ': ' + self.name
 
 
 class Alias:
@@ -75,4 +84,4 @@ class Alias:
             self.country['timezome'] = 'Original Country Timezone'
 
     def __str__(self):
-        return f'{self.country["name"]}: {self.name}'
+        return self.country['name'] + ': ' + self.name

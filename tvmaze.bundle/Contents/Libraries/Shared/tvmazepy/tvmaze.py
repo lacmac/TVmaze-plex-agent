@@ -1,3 +1,4 @@
+from __future__ import absolute_import, print_function
 from datetime import datetime
 
 import requests
@@ -11,15 +12,12 @@ from .model.person import Character, Person, Crew
 from .model.embed import Embed
 
 
-class TVmaze:
-    def __init__(self):
-        pass
-
+class TVmaze(object):
     def _query_api(self, url, params=None):
         res = requests.get(url, params)
         print(res.url)
         if res.status_code != requests.codes.OK:
-            print(f'Page request was unsuccessful: {res.status_code}', res.reason)
+            print('Page request was unsuccessful: ' + res.status_code, res.reason)
             return None
         return res.json()
 
@@ -56,12 +54,21 @@ class TVmaze:
 
     def get_show_episode_list(self, tvmaze_id, specials=False):
         specials = 1 if specials else None
-        res = self._query_api(endpoints.show_episode_list.format(str(tvmaze_id)), {'specials': specials})
+        res = self._get_show_episode_list_raw(tvmaze_id, specials)
         return [Episode(episode) for episode in res] if res is not None else []
 
-    def _get_show_episode_list_raw(self, tvmaze_id, specials=False):
-        specials = 1 if specials else None
+    def _get_show_episode_list_raw(self, tvmaze_id, specials):
         return self._query_api(endpoints.show_episode_list.format(str(tvmaze_id)), {'specials': specials})
+
+    def get_show_specials(self, tvmaze_id):
+        res = self._query_api(endpoints.show_episode_list.format(str(tvmaze_id)), {'specials': 1})
+        specials = [Episode(episode) for episode in res if episode['number'] is None] if res is not None else []
+        special_num = 1
+        for special in specials:
+            special.season = 0
+            special.number = special_num
+            special_num += 1
+        return specials
 
     def get_show_episode(self, tvmaze_id, season, episode):
         res = self._query_api(endpoints.show_episode.format(str(tvmaze_id)), {'season': season, 'number': episode})

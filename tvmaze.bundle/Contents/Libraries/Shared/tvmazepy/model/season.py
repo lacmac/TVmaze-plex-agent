@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
 import string
+
 from .. import utils
 from .episode import Episode
 
 
-class Season:
+class Season(object):
     def __init__(self, data, special=False):
         if not special:
             self.id = data['id']

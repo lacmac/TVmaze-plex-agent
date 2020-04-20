@@ -1,4 +1,7 @@
-class Embed:
+from __future__ import unicode_literals
+
+
+class Embed(object):
     def __init__(self, data):
         self.key = 'embed'
         self.value = None
@@ -11,4 +14,4 @@ class Embed:
                 self.value = data
 
     def __str__(self):
-        return f'{self.key}: {self.value}'
+        return self.key + ': ' + self.value
