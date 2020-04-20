@@ -14,7 +14,7 @@ class Show(object):
         self.name = show['name']
         self.url = show['url']
         self.type = show['type']
-        self.lang = show['language']
+        self.language = show['language']
         self.genres = show['genres']
         self.status = show['status']
         self.num_episodes = show['runtime']
