@@ -4,12 +4,16 @@
     <dict>
         <key>PlexFrameworkVersion</key>
         <string>2</string>
+
         <key>CFBundleIdentifier</key>
         <string>com.plexapp.agents.tvmaze</string>
+
         <key>PlexAgentAttributionText</key>
         <string>TVmaze.com</string>
+
         <key>PlexPluginClass</key>
         <string>Agent</string>
+
         <key>PlexPluginCodePolicy</key>
         <string>Elevated</string>
     </dict>
