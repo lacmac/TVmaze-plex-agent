@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+from datetime import datetime
 
 from .. import utils
 from .season import Season
@@ -8,43 +9,46 @@ from .person import Crew, Character
 
 class Show(object):
     def __init__(self, data):
-        self.score = data['score'] if 'score' in data else 100
-        show = data['show'] if 'show' in data else data
-        self.id = show['id']
-        self.name = show['name']
-        self.url = show['url']
-        self.type = show['type']
-        self.language = show['language']
-        self.genres = show['genres']
-        self.status = show['status']
-        self.num_episodes = show['runtime']
+        self.score = data.get('score') if 'score' in data else 100
+        show = data.get('show') if 'show' in data else data
+        self.id = show.get('id')
+        self.name = show.get('name')
+        self.url = show.get('url')
+        self.type = show.get('type')
+        self.language = show.get('language')
+        self.genres = show.get('genres')
+        self.status = show.get('status')
+        self.num_episodes = show.get('runtime')
         self.seasons = {}
         self._episode_list = []
         self.specials = {}
         self.cast = []
         self.crew = []
-        self._handle_embedded(data['_embedded']) if '_embedded' in data else None
-        self.premiere_date = show['premiered']  # datetime?
-        self.official_site = show['officialSite']
-        self.schedule = show['schedule']
-        self.rating = show['rating']
-        self.weight = show['weight']
-        self.network = show['network']
-        self.streaming_service = show['webChannel']
-        self.external_ids = show['externals']
-        self.images = show['image']
-        self.summary = utils.strip_tags(show['summary'])
-        self.links = show['_links']
+        self._handle_embedded(data.get('_embedded'))
+        self.premiere_date = datetime.strptime(show.get('premiered'), '%Y-%m-%d') if show.get('premiered') is not None else None
+        self.official_site = show.get('officialSite')
+        self.schedule = show.get('schedule')
+        self.rating = show.get('rating')
+        self.weight = show.get('weight')
+        self.network = show.get('network')
+        self.streaming_service = show.get('webChannel')
+        self.external_ids = show.get('externals')
+        self.images = show.get('image')
+        self.summary = utils.strip_tags(show.get('summary'))
+        self.links = show.get('_links')
 
     def _handle_embedded(self, embedded):
+        if embedded is None:
+            return
+
         special_num = 1
         if 'seasons' in embedded:
-            seasons = [Season(season) for season in embedded['seasons']]
+            seasons = [Season(season) for season in embedded.get('seasons')]
             for season in seasons:
                 self.seasons[season.number] = season
 
         if 'seasons' in embedded and 'episodes' in embedded:
-            episodes = [Episode(episode) for episode in embedded['episodes']]
+            episodes = [Episode(episode) for episode in embedded.get('episodes')]
             for episode in episodes:
                 if not episode.special:
                     self.seasons[episode.season].episodes[episode.number] = episode
@@ -55,7 +59,7 @@ class Show(object):
                     self.specials[episode.id] = episode
 
         if 'seasons' not in embedded and 'episodes' in embedded:
-            episodes = [Episode(episode) for episode in embedded['episodes']]
+            episodes = [Episode(episode) for episode in embedded.get('episodes')]
             for episode in episodes:
                 if not episode.special:
                     self._episode_list.append(episode)
@@ -65,8 +69,8 @@ class Show(object):
                     special_num += 1
                     self.specials[episode.id] = episode
 
-        self.cast = [Character(c['character'], c['person']) for c in embedded['cast']] if 'cast' in embedded else []
-        self.crew = [Crew(c) for c in embedded['crew']] if 'crew' in embedded else []
+        self.cast = [Character(c.get('character'), c.get('person')) for c in embedded.get('cast')] if 'cast' in embedded else []
+        self.crew = [Crew(c) for c in embedded.get('crew')] if 'crew' in embedded else []
 
     def __str__(self):
         return str(self.id) + ': ' + self.name
@@ -74,9 +78,9 @@ class Show(object):
 
 class Alias:
     def __init__(self, data):
-        self.name = data['name']
+        self.name = data.get('name')
         if data['country'] is not None:
-            self.country = data['country']
+            self.country = data.get('country')
         else:
             self.country = {}
             self.country['name'] = 'Original Country'
@@ -84,4 +88,4 @@ class Alias:
             self.country['timezome'] = 'Original Country Timezone'
 
     def __str__(self):
-        return self.country['name'] + ': ' + self.name
+        return self.country.get('name') + ': ' + self.name
