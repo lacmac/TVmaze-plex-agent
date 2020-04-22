@@ -43,7 +43,7 @@ class TVmazeAgent(Agent.TV_Shows):
             scaled_score = int(99 * (show.score - min(scores)) / (max(scores) - min(scores)) + 1) if len(shows) > 1 else 100
 
             # Add the show to the return list
-            show_year = show.premiere_date.year if show.premiere_date else None
+            show_year = show.premiere_date.year if show.premiere_date is not None else None
             results.Append(MetadataSearchResult(
                 id=str(show.id),
                 name=show.name,
@@ -58,6 +58,7 @@ class TVmazeAgent(Agent.TV_Shows):
                 show_year,
                 locale,
             ))
+
         end = timeit.default_timer()
         Log.Info('Search completed with {} matches in {} seconds'.format(len(shows), time_taken(start, end)))
 
@@ -94,21 +95,27 @@ class TVmazeAgent(Agent.TV_Shows):
 
         # Update show cast
         metadata.roles.clear()
-        for character in show.cast:
-            role_metadata = metadata.roles.new()
-            role_metadata.role = character.name
-            role_metadata.name = character.person.name
-            # Prefer character photo over talent photo
-            if character.images is not None and character.images.get('original') is not None:
-                role_metadata.photo = character.images.get('original')
-            elif character.person.images is not None and character.person.images.get('original') is not None:
-                role_metadata.photo = character.person.images.get('original')
+        @parallelize
+        def update_cast_members():
+            for character in show.cast:
+                @task
+                def update_cast_member(character=character):
+                    role_metadata = metadata.roles.new()
+                    role_metadata.role = character.name
+                    role_metadata.name = character.person.name
+                    # Prefer character photo over talent photo
+                    if character.images is not None and character.images.get('original') is not None:
+                        role_metadata.photo = character.images.get('original')
+                    elif character.person.images is not None and character.person.images.get('original') is not None:
+                        role_metadata.photo = character.person.images.get('original')
         Log.Info('Updated cast')
 
         # Episode 1 index for calculating the absolute index of each episode
         episode_base_index = show.seasons[1].episodes[1].id
 
-        # Update season and its episode details
+        #TODO skip over season and episodes that the user does not have
+
+        # Update season details
         for season in show.seasons.values():
             season_metadata = metadata.seasons[season.number]
 
@@ -128,24 +135,29 @@ class TVmazeAgent(Agent.TV_Shows):
             Log.Info('Updated poster for season {}'.format(season.number))
 
             # Update episode details
-            for episode in season.episodes.values():
-                episode_metadata = metadata.seasons[episode.season].episodes[episode.number]
+            @parallelize
+            def update_episodes():
+                for episode in season.episodes.values():
+                    @task
+                    def update_episode(episode=episode):
+                        episode_metadata = metadata.seasons[episode.season].episodes[episode.number]
 
-                # Update main episode details
-                episode_metadata.title = episode.name
-                episode_metadata.summary = episode.summary
-                episode_metadata.originally_available_at = episode.airdate
-                episode_metadata.rating = None
-                episode_metadata.duration = episode.duration
-                episode_metadata.absolute_index = episode.id - episode_base_index
-                Log.Info('Updated info for S{}E{} {}'.format(episode.season, episode.number, episode.name))
+                        # Update main episode details
+                        episode_metadata.title = episode.name
+                        episode_metadata.summary = episode.summary
+                        episode_metadata.originally_available_at = episode.airdate
+                        episode_metadata.rating = None
+                        episode_metadata.duration = episode.duration
+                        episode_metadata.absolute_index = episode.id - episode_base_index
+                        Log.Info('Updated info for S{}E{} {}'.format(episode.season, episode.number, episode.name))
 
-                # Update episode thumbnail
-                if episode.images is not None and episode.images.get('medium') is not None:
-                    episode_thumbnail_url = episode.images.get('medium')
-                    if episode_thumbnail_url not in episode_metadata.thumbs:
-                        episode_metadata.thumbs[episode_thumbnail_url] = Proxy.Media(HTTP.Request(episode_thumbnail_url).content)
-                Log.Info('Updated thumbnail for S{}E{} {}'.format(episode.season, episode.number, episode.name))
-            Log.Info('Updated info for season {}'.format(season.number))
+                        # Update episode thumbnail
+                        if episode.images is not None and episode.images.get('medium') is not None:
+                            episode_thumbnail_url = episode.images.get('medium')
+                            if episode_thumbnail_url not in episode_metadata.thumbs:
+                                episode_metadata.thumbs[episode_thumbnail_url] = Proxy.Media(HTTP.Request(episode_thumbnail_url).content)
+                        Log.Info('Updated thumbnail for S{}E{} {}'.format(episode.season, episode.number, episode.name))
+                Log.Info('Updated info for season {}'.format(season.number))
+
         end = timeit.default_timer()
         Log.Info('Metadata update completed in {} seconds'.format(time_taken(start, end)))
