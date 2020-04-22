@@ -15,7 +15,7 @@ SUPPORTED_LANGUAGES = [
 
 
 def Start():
-    Log.Debug('Starting TVmaze agent...')
+    Log.Info('Starting TVmaze agent...')
 
 
 def time_taken(start, end):
@@ -138,6 +138,10 @@ class TVmazeAgent(Agent.TV_Shows):
             @parallelize
             def update_episodes():
                 for episode in season.episodes.values():
+                    if media is not None:
+                        if not (episode.season in media.seasons and episode.number in media.seasons[episode.season].episodes):
+                            Log('No media exists for S{}E{} - skipping updating of episode data'.format(episode.season, episode.number))
+                            continue
                     @task
                     def update_episode(episode=episode):
                         episode_metadata = metadata.seasons[episode.season].episodes[episode.number]
